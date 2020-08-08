@@ -37,15 +37,14 @@ namespace Templatizer.Controllers
     /// </summary>
     /// <returns></returns>
     [HttpPost("webhook")]
-    public async Task Webhook()
+    public async Task Webhook(WebhookPayload payload)
     {
       //var jwt = await GetJWT();
       var signatureFromHeader = Request.Headers["HTTP_X_HUB_SIGNATURE"];
       var webhookSecret = await GetSecret(GitHubController.GITHUB_WEBHOOK_SECRET_NAME);
       var sha1 = new HMACSHA1(Encoding.ASCII.GetBytes(webhookSecret));
       // TODO: come back here later and do the verification
-
-
+      _logger.LogInformation(payload.ToString());
     }
 
     /// <summary>
