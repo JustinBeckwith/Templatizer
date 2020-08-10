@@ -14,118 +14,164 @@ namespace Templatizer.Models
 
   public class GitHubUser
   {
-    public string login;
-    public int id;
-    public string node_id;
-    public string avatar_url;
-    public string gravatar_id;
-    public string url;
-    public string html_url;
-    public string followers_url;
-    public string following_url;
-    public string gists_url;
-    public string starred_url;
-    public string subscriptions_url;
-    public string organizations_url;
-    public string repos_url;
-    public string events_url;
-    public string received_events_url;
-    public string type;
-    public bool site_admin;
+    public string login { get; set; }
+    public int id { get; set; }
+    public string node_id { get; set; }
+    public string avatar_url { get; set; }
+    public string gravatar_id { get; set; }
+    public string url { get; set; }
+    public string html_url { get; set; }
+    public string followers_url { get; set; }
+    public string following_url { get; set; }
+    public string gists_url { get; set; }
+    public string starred_url { get; set; }
+    public string subscriptions_url { get; set; }
+    public string organizations_url { get; set; }
+    public string repos_url { get; set; }
+    public string events_url { get; set; }
+    public string received_events_url { get; set; }
+    public string type { get; set; }
+    public bool site_admin { get; set; }
   }
 
   public class GitHubRepository
   {
-    public int id;
-    public string node_id;
-    public string name;
-    public string full_name;
-    public GitHubUser owner;
+    public int id { get; set; }
+    public string node_id { get; set; }
+    public string name { get; set; }
+    public string full_name { get; set; }
+    public GitHubUser owner { get; set; }
     [JsonPropertyName("private")]
     public bool isPrivate { get; set; }
-    public string html_url;
-    public string description;
-    public bool fork;
-    public string url;
-    public string archive_url;
-    public string assignees_url;
-    public string blobs_url;
-    public string branches_url;
-    public string collaborators_url;
-    public string comments_url;
-    public string commits_url;
-    public string compare_url;
-    public string contents_url;
-    public string contributors_url;
-    public string deployments_url;
-    public string downloads_url;
-    public string events_url;
-    public string forks_url;
-    public string git_commits_url;
-    public string git_refs_url;
-    public string git_tags_url;
-    public string git_url;
-    public string issue_comment_url;
-    public string issue_events_url;
-    public string issues_url;
-    public string keys_url;
-    public string labels_url;
-    public string languages_url;
-    public string merges_url;
-    public string milestones_url;
-    public string notifications_url;
-    public string pulls_url;
-    public string releases_url;
-    public string ssh_url;
-    public string stargazers_url;
-    public string statuses_url;
-    public string subscribers_url;
-    public string subscription_url;
-    public string tags_url;
-    public string teams_url;
-    public string trees_url;
+    public string html_url { get; set; }
+    public string description { get; set; }
+    public bool fork { get; set; }
+    public string url { get; set; }
+    public string archive_url { get; set; }
+    public string assignees_url { get; set; }
+    public string blobs_url { get; set; }
+    public string branches_url { get; set; }
+    public string collaborators_url { get; set; }
+    public string comments_url { get; set; }
+    public string commits_url { get; set; }
+    public string compare_url { get; set; }
+    public string contents_url { get; set; }
+    public string contributors_url { get; set; }
+    public string deployments_url { get; set; }
+    public string downloads_url { get; set; }
+    public string events_url { get; set; }
+    public string forks_url { get; set; }
+    public string git_commits_url { get; set; }
+    public string git_refs_url { get; set; }
+    public string git_tags_url { get; set; }
+    public string git_url { get; set; }
+    public string issue_comment_url { get; set; }
+    public string issue_events_url { get; set; }
+    public string issues_url { get; set; }
+    public string keys_url { get; set; }
+    public string labels_url { get; set; }
+    public string languages_url { get; set; }
+    public string merges_url { get; set; }
+    public string milestones_url { get; set; }
+    public string notifications_url { get; set; }
+    public string pulls_url { get; set; }
+    public string releases_url { get; set; }
+    public string ssh_url { get; set; }
+    public string stargazers_url { get; set; }
+    public string statuses_url { get; set; }
+    public string subscribers_url { get; set; }
+    public string subscription_url { get; set; }
+    public string tags_url { get; set; }
+    public string teams_url { get; set; }
+    public string trees_url { get; set; }
   }
 
   public class GitHubOrganization
   {
-    public string login;
-    public int id;
-    public string node_id;
-    public string url;
-    public string repos_url;
-    public string events_url;
-    public string hooks_url;
-    public string issues_url;
-    public string members_url;
-    public string public_members_url;
-    public string avatar_url;
-    public string description;
+    public string login { get; set; }
+    public int id { get; set; }
+    public string node_id { get; set; }
+    public string url { get; set; }
+    public string repos_url { get; set; }
+    public string events_url { get; set; }
+    public string hooks_url { get; set; }
+    public string issues_url { get; set; }
+    public string members_url { get; set; }
+    public string public_members_url { get; set; }
+    public string avatar_url { get; set; }
+    public string description { get; set; }
   }
 
   public class GitHubAppInstallation
   {
-    public int id;
-    public GitHubUser account;
-    public string repository_selection;
-    public string access_tokens_url;
-    public string repositories_url;
-    public string html_url;
-    public int app_id;
-    public int target_id;
-    public string target_type;
-    public Dictionary<string, string> permissions;
-    public string[] events;
-    public int created_at;
-    public int updated_at;
-    public string single_file_name;
+    public int id { get; set; }
+    public GitHubUser account { get; set; }
+    public string repository_selection { get; set; }
+    public string access_tokens_url { get; set; }
+    public string repositories_url { get; set; }
+    public string html_url { get; set; }
+    public int app_id { get; set; }
+    public int target_id { get; set; }
+    public string target_type { get; set; }
+    public Dictionary<string, string> permissions { get; set; }
+    public string[] events { get; set; }
+    public int created_at { get; set; }
+    public int updated_at { get; set; }
+    public string single_file_name { get; set; }
   }
 
   public class GitHubAccessTokenResult
   {
-    public string token;
-    public string expires_at;
-    public string repository_selection;
-    public Dictionary<string, string> permissions;
+    public string token { get; set; }
+    public string expires_at { get; set; }
+    public string repository_selection { get; set; }
+    public Dictionary<string, string> permissions { get; set; }
+  }
 
+  public class GitUser
+  {
+    public string name { get; set; }
+    public string email { get; set; }
+    public string? username { get; set; }
+  }
+
+  public class Commit
+  {
+    public string id { get; set; }
+    public string tree_id { get; set; }
+    public bool distinct { get; set; }
+    public string message { get; set; }
+    public string timestamp { get; set; }
+    public string url { get; set; }
+    public GitUser author { get; set; }
+    public GitUser committer { get; set; }
+    public string[] added { get; set; }
+    public string[] removed { get; set; }
+    public string[] modified { get; set; }
+  }
+
+  public class GitHubInstallation
+  {
+    public int id { get; set; }
+    public string node_id { get; set; }
+  }
+
+  public class PushEventPayload
+  {
+    [JsonPropertyName("ref")]
+    public string ref_ { get; set; }
+    public string before { get; set; }
+    public string after { get; set; }
+    public GitHubRepository repository { get; set; }
+    public GitUser pusher { get; set; }
+    public GitHubUser sender { get; set; }
+    public GitHubInstallation installation { get; set; }
+    public bool created { get; set; }
+    public bool deleted { get; set; }
+    public bool forced { get; set; }
+    public string? base_ref { get; set; }
+    public string compare { get; set; }
+    public Commit[] commits { get; set; }
+    public Commit head_commit { get; set; }
   }
 }

@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Templatizer.Models;
+using System.IO;
 
 namespace Templatizer.Controllers
 {
@@ -37,14 +38,46 @@ namespace Templatizer.Controllers
     /// </summary>
     /// <returns></returns>
     [HttpPost("webhook")]
-    public async Task Webhook(WebhookPayload payload)
+    public async Task<IActionResult> Webhook()
     {
-      //var jwt = await GetJWT();
-      var signatureFromHeader = Request.Headers["HTTP_X_HUB_SIGNATURE"];
+      // Fetch the JSON body as raw text
+      var reader = new StreamReader(Request.Body, Encoding.UTF8);
+      var result = await reader.ReadToEndAsync();
+      _logger.LogInformation(result);
+
+      var headers = Request.Headers;
+      foreach (var header in Request.Headers)
+      {
+        Console.WriteLine(header.ToString());
+      }
+
+      // Compare hash signatures to validate this request came from GitHub
+      var signatureFromHeader = Request.Headers["x-hub-signature"];
       var webhookSecret = await GetSecret(GitHubController.GITHUB_WEBHOOK_SECRET_NAME);
-      var sha1 = new HMACSHA1(Encoding.ASCII.GetBytes(webhookSecret));
-      // TODO: come back here later and do the verification
-      _logger.LogInformation(payload.ToString());
+      var sha1 = new HMACSHA1(Encoding.UTF8.GetBytes(webhookSecret.Trim()));
+      var signature = sha1.ComputeHash(Encoding.UTF8.GetBytes(result));
+      var computedSignature = "sha1=" + BitConverter.ToString(signature).Replace("-", "").ToLower();
+      if (computedSignature != signatureFromHeader)
+      {
+        return StatusCode(403);
+      }
+
+      // Dispatch methods based on the event payload type
+      var evt = Request.Headers["x-github-event"];
+      switch (evt)
+      {
+        case "push":
+          var payload = JsonSerializer.Deserialize<PushEventPayload>(result);
+          HandlePushEvent(payload);
+          break;
+      }
+      return StatusCode(200);
+    }
+
+    private void HandlePushEvent(PushEventPayload payload)
+    {
+      Console.WriteLine("I am in the push event!");
+      Console.WriteLine($"Got a push to {payload.repository.full_name} from {payload.sender.login}");
     }
 
     /// <summary>
@@ -109,7 +142,8 @@ namespace Templatizer.Controllers
       requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
       requestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.machine-man-preview+json"));
       var response = await client.SendAsync(requestMessage);
-      if (!response.IsSuccessStatusCode) {
+      if (!response.IsSuccessStatusCode)
+      {
         _logger.LogError("Request for Access Token failed.", response.StatusCode);
         return String.Empty;
       }
