@@ -14,6 +14,7 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Templatizer.Models;
 using System.IO;
+using System.Net.Http.Json;
 
 namespace Templatizer.Controllers
 {
@@ -74,10 +75,58 @@ namespace Templatizer.Controllers
       return StatusCode(200);
     }
 
+    /// <summary>
+    /// Check if this repository is a source of template files that are meant
+    /// to be copied to other repositories using the same config set. If so,
+    /// apply the change to all configured target repositories.
+    /// </summary>
+    /// <param name="payload"></param>
     private void HandlePushEvent(PushEventPayload payload)
     {
       Console.WriteLine("I am in the push event!");
       Console.WriteLine($"Got a push to {payload.repository.full_name} from {payload.sender.login}");
+      var config = GetConfig(
+        payload.installation.id,
+        payload.repository.owner.login,
+        payload.repository.name
+      );
+      Console.WriteLine(config.ToString());
+    }
+
+    /// <summary>
+    /// Obtain the config for the repository, looking in order of preference:
+    /// - org/repo/.github/templatizer.yml
+    /// - org/.github/.github/templatizer.yml
+    /// - default settings
+    /// </summary>
+    /// <param name="org">Organiation for the repository</param>
+    /// <param name="repo">Repository name</param>
+    /// <returns>Configuration from the repo, org, or defaults.</returns>
+    private async Task<AppConfig> GetConfig(int installationId, string org, string repo)
+    {
+      var token = await GetAccessToken(installationId);
+      var client = new HttpClient();
+      var endpoint = $"https://api.github.com/repos/{org}/{repo}/contents/.github/templatizer.yml";
+      var requestMessage = new HttpRequestMessage {
+        RequestUri = new Uri(endpoint),
+        Method = HttpMethod.Get,
+        Headers = {
+          { "Authorization", $"token {token}"},
+          { "User-Agent", "Templatizer" }
+        }
+      };
+      var response = await client.SendAsync(requestMessage);
+      if (!response.IsSuccessStatusCode)
+      {
+        _logger.LogError("Request for config failed.", response.StatusCode);
+        return new AppConfig();
+      }
+      var data = await response.Content.ReadFromJsonAsync<GitHubContents>();
+      var configBits = Convert.FromBase64String(data.content);
+      var configData = Encoding.UTF8.GetString(configBits);
+      var deserializer = new YamlDotNet.Serialization.Deserializer();
+      var config = deserializer.Deserialize<AppConfig>(configData);
+      return config;
     }
 
     /// <summary>
@@ -131,21 +180,28 @@ namespace Templatizer.Controllers
     /// </summary>
     /// <param name="installationId"></param>
     /// <returns></returns>
-    private async Task<string> GetAccessToken(string installationId)
+    private async Task<string> GetAccessToken(int installationId)
     {
       // TODO: future me, these expire in one hour after the request
       // https://api.github.com/app/installations/:installation_id/access_tokens
       var jwt = await GetJWT();
-      var endpoint = $"https://api.github.com/app/installations/${installationId}/access_tokens";
-      var requestMessage = new HttpRequestMessage(HttpMethod.Post, endpoint);
+      var endpoint = $"https://api.github.com/app/installations/{installationId}/access_tokens";
+      var requestMessage = new HttpRequestMessage {
+        RequestUri = new Uri(endpoint),
+        Method = HttpMethod.Post,
+        Headers = {
+          { "Authorization", $"Bearer {jwt}" },
+          { "Accept", "application/vnd.github.machine-man-preview+json" },
+          { "User-Agent", "Templatizer" }
+        }
+      };
       var client = new HttpClient();
-      requestMessage.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
-      requestMessage.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github.machine-man-preview+json"));
       var response = await client.SendAsync(requestMessage);
       if (!response.IsSuccessStatusCode)
       {
         _logger.LogError("Request for Access Token failed.", response.StatusCode);
-        return String.Empty;
+        var output = await response.Content.ReadAsStringAsync();
+        return string.Empty;
       }
       var responseStream = await response.Content.ReadAsStreamAsync();
       var result = await JsonSerializer.DeserializeAsync<GitHubAccessTokenResult>(responseStream);

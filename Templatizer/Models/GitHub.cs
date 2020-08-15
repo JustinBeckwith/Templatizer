@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
@@ -173,5 +174,33 @@ namespace Templatizer.Models
     public string compare { get; set; }
     public Commit[] commits { get; set; }
     public Commit head_commit { get; set; }
+  }
+
+  public class TemplateSet
+  {
+    public string name { get; set; }
+    public string[] files { get; set; }
+  }
+
+  public class AppConfig
+  {
+    public TemplateSet?[] sourceSets { get; set; }
+    public string?[] configSets { get; set; }
+  }
+
+  public class GitHubContents
+  {
+    public string name { get; set; }
+    public string path { get; set; }
+    public string sha { get; set; }
+    public int size { get; set; }
+    public string url { get; set; }
+    public string html_url { get; set; }
+    public string git_url { get; set; }
+    public string download_url { get; set; }
+    public string type { get; set; }
+    public string content { get; set; }
+    public string encoding { get; set; }
+    public Dictionary<string, string> _links { get; set; }
   }
 }
