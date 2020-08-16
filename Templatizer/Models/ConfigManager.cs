@@ -1,11 +1,12 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using System;
 using System.Text;
 using System.Net.Http;
 using Templatizer.Models;
-using System.IO;
 using System.Net.Http.Json;
+using Google.Cloud.Firestore;
 
 namespace Templatizer.Core
 {
@@ -13,10 +14,13 @@ namespace Templatizer.Core
   {
     private readonly ILogger _logger;
     private AuthManager _authManager;
+    private IConfiguration _config;
+    private FirestoreDb _firestoreDb;
 
-    public ConfigManager(ILogger logger, AuthManager authManager)
+    public ConfigManager(ILogger logger, IConfiguration config, AuthManager authManager)
     {
-      _logger = logger;
+      this._logger = logger;
+      this._config = config;
       this._authManager = authManager;
     }
 
@@ -73,6 +77,52 @@ namespace Templatizer.Core
       var deserializer = new YamlDotNet.Serialization.Deserializer();
       var config = deserializer.Deserialize<AppConfig>(configData);
       return config;
+    }
+
+    /// <summary>
+    /// Store an AppConfig, using the `org/repo` as a key in Firestore
+    /// </summary>
+    /// <param name="config"></param>
+    /// <param name="repo"></param>
+    /// <returns></returns>
+    public async Task StoreConfigInFirestore(AppConfig config, int repoId)
+    {
+      var db = GetFirestoreDb();
+      var doc = db.Collection("configs").Document(repoId.ToString());
+      await doc.CreateAsync(config);
+    }
+
+    /// <summary>
+    /// Fetch an AppConfig from Firestore for a given org/repo.
+    /// </summary>
+    /// <param name="repo"></param>
+    /// <returns></returns>
+    public async Task<AppConfig> GetConfigFromFirestore(int repoId)
+    {
+      var db = GetFirestoreDb();
+      var doc = db.Collection("configs").Document(repoId.ToString());
+      var snapshot = await doc.GetSnapshotAsync();
+      if (snapshot.Exists) {
+        Console.WriteLine("Document data for {0} document:", snapshot.Id);
+        var config = snapshot.ConvertTo<AppConfig>();
+        return config;
+      } else {
+        Console.WriteLine("Document {0} does not exist!", snapshot.Id);
+        return null;
+      }
+    }
+
+    /// <summary>
+    /// Fetch and cache an instance of a FirestoreDB
+    /// </summary>
+    /// <returns></returns>
+    private FirestoreDb GetFirestoreDb()
+    {
+      if (_firestoreDb == null) {
+        var projectId = _config["ProjectId"];
+        _firestoreDb = FirestoreDb.Create(projectId);
+      }
+      return _firestoreDb;
     }
   }
 }

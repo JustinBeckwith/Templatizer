@@ -1,6 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 using System.Collections.Generic;
+using Google.Cloud.Firestore;
 
 namespace Templatizer.Models
 {
@@ -176,15 +177,21 @@ namespace Templatizer.Models
     public Commit head_commit { get; set; }
   }
 
+  [FirestoreData]
   public class TemplateSet
   {
+    [FirestoreProperty]
     public string name { get; set; }
+    [FirestoreProperty]
     public string[] files { get; set; }
   }
 
+  [FirestoreData]
   public class AppConfig
   {
+    [FirestoreProperty]
     public TemplateSet?[] sourceSets { get; set; }
+    [FirestoreProperty]
     public string?[] configSets { get; set; }
   }
 
@@ -202,5 +209,74 @@ namespace Templatizer.Models
     public string content { get; set; }
     public string encoding { get; set; }
     public Dictionary<string, string> _links { get; set; }
+  }
+
+  public class GitHubBranch
+  {
+    public string label { get; set; }
+    [JsonPropertyName("ref")]
+    public string ref_ { get; set; }
+    public string sha { get; set; }
+    public GitHubUser user { get; set; }
+    public GitHubRepository repo { get; set; }
+  }
+
+  public class GitHubPullRequest
+  {
+    public string url { get; set; }
+    public int id { get; set; }
+    public string node_id { get; set; }
+    public string html_url { get; set; }
+    public string diff_url { get; set; }
+    public string patch_url { get; set; }
+    public string issue_url { get; set; }
+    public int number { get; set; }
+    public string state { get; set; }
+    public bool locked { get; set; }
+    public string title { get; set; }
+    public GitHubUser user { get; set; }
+    public string body { get; set; }
+    public DateTime created_at { get; set; }
+    public DateTime updated_at { get; set; }
+    public DateTime closed_at { get; set; }
+    public DateTime merged_at { get; set; }
+    public string merge_commit_sha { get; set; }
+    public string assignee { get; set; }
+    public string[] assignees { get; set; }
+    public string[] requested_reviewers { get; set; }
+    public string[] requested_teams { get; set; }
+    public string[] labels { get; set; }
+    public string milestone { get; set; }
+    public string commits_url { get; set; }
+    public string review_comments_url { get; set; }
+    public string review_comment_url { get; set; }
+    public string comments_url { get; set; }
+    public string statuses_url { get; set; }
+    public GitHubBranch head { get; set; }
+    [JsonPropertyName("base")]
+    public GitHubBranch base_ { get; set; }
+    public Dictionary<string, Dictionary<string, string>> _links { get; set; }
+    public string author_association { get; set; }
+    public bool draft { get; set; }
+    public bool merged { get; set; }
+    public bool mergeable { get; set; }
+    public bool rebaseable { get; set; }
+    public string mergeable_state { get; set; }
+    public string merged_by { get; set; }
+    public int comments { get; set; }
+    public int review_comments { get; set; }
+    public bool maintainer_can_modify { get; set; }
+    public int commits { get; set; }
+    public int additions { get; set; }
+    public int deletions { get; set; }
+    public int changed_files { get; set; }
+  }
+
+  public class GitHubPullRequestPayload
+  {
+    public string action { get; set; }
+    public int number { get; set; }
+    public GitHubRepository repository { get; set; }
+    public GitHubUser sender { get; set; }
   }
 }

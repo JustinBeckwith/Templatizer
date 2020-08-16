@@ -22,12 +22,12 @@ namespace Templatizer.Controllers
     private AuthManager _authManager;
     private ConfigManager _configManager;
 
-    public GitHubController(ILogger<GitHubController> logger, IConfiguration configuration)
+    public GitHubController(ILogger<GitHubController> logger, IConfiguration config)
     {
-      _logger = logger;
-      _config = configuration;
-      this._authManager = new AuthManager(logger, configuration);
-      this._configManager = new ConfigManager(logger, this._authManager);
+      this._logger = logger;
+      this._config = config;
+      this._authManager = new AuthManager(logger, config);
+      this._configManager = new ConfigManager(logger, config, this._authManager);
     }
 
     /// <summary>
@@ -62,7 +62,7 @@ namespace Templatizer.Controllers
       {
         case "push":
           var payload = JsonSerializer.Deserialize<PushEventPayload>(result);
-          HandlePushEvent(payload);
+          await HandlePushEvent(payload);
           break;
       }
       return StatusCode(200);
@@ -74,15 +74,14 @@ namespace Templatizer.Controllers
     /// apply the change to all configured target repositories.
     /// </summary>
     /// <param name="payload"></param>
-    private void HandlePushEvent(PushEventPayload payload)
+    private async Task HandlePushEvent(PushEventPayload payload)
     {
       Console.WriteLine("I am in the push event!");
       Console.WriteLine($"Got a push to {payload.repository.full_name} from {payload.sender.login}");
-      var config = this._configManager.GetConfig(
-        payload.installation.id,
-        payload.repository.owner.login,
-        payload.repository.name
-      );
+      var owner = payload.repository.owner.login;
+      var repo = payload.repository.name;
+      var config = await _configManager.GetConfig(payload.installation.id, owner, repo);
+      await _configManager.StoreConfigInFirestore(config, payload.repository.id);
       Console.WriteLine(config.ToString());
     }
   }
