@@ -82,14 +82,18 @@ namespace Templatizer.Core
     /// <summary>
     /// Store an AppConfig, using the `org/repo` as a key in Firestore
     /// </summary>
-    /// <param name="config"></param>
-    /// <param name="repo"></param>
+    /// <param name="config">AppConfig of the repository</param>
+    /// <param name="repoId">numeric repository id</param>
     /// <returns></returns>
-    public async Task StoreConfigInFirestore(AppConfig config, int repoId)
+    public async Task StoreConfigInFirestore(FullAppConfig config, int repoId)
     {
+      if (config == null)
+      {
+        return;
+      }
       var db = GetFirestoreDb();
       var doc = db.Collection("configs").Document(repoId.ToString());
-      await doc.CreateAsync(config);
+      await doc.SetAsync(config);
     }
 
     /// <summary>
@@ -97,14 +101,14 @@ namespace Templatizer.Core
     /// </summary>
     /// <param name="repo"></param>
     /// <returns></returns>
-    public async Task<AppConfig> GetConfigFromFirestore(int repoId)
+    public async Task<FullAppConfig> GetConfigFromFirestore(int repoId)
     {
       var db = GetFirestoreDb();
       var doc = db.Collection("configs").Document(repoId.ToString());
       var snapshot = await doc.GetSnapshotAsync();
       if (snapshot.Exists) {
         Console.WriteLine("Document data for {0} document:", snapshot.Id);
-        var config = snapshot.ConvertTo<AppConfig>();
+        var config = snapshot.ConvertTo<FullAppConfig>();
         return config;
       } else {
         Console.WriteLine("Document {0} does not exist!", snapshot.Id);

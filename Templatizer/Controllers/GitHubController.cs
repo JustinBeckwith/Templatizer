@@ -81,8 +81,13 @@ namespace Templatizer.Controllers
       var owner = payload.repository.owner.login;
       var repo = payload.repository.name;
       var config = await _configManager.GetConfig(payload.installation.id, owner, repo);
-      await _configManager.StoreConfigInFirestore(config, payload.repository.id);
-      Console.WriteLine(config.ToString());
+      var fullConfig = new FullAppConfig {
+        configSets = config.configSets,
+        sourceSets = config.sourceSets,
+        repo = payload.repository.full_name
+      };
+      await _configManager.StoreConfigInFirestore(fullConfig, payload.repository.id);
+      Console.WriteLine(fullConfig.ToString());
     }
   }
 }

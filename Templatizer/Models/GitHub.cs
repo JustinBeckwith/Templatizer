@@ -195,6 +195,13 @@ namespace Templatizer.Models
     public string?[] configSets { get; set; }
   }
 
+  [FirestoreData]
+  public class FullAppConfig : AppConfig
+  {
+    [FirestoreProperty]
+    public string repo { get; set; }
+  }
+
   public class GitHubContents
   {
     public string name { get; set; }
