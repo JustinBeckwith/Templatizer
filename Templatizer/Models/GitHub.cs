@@ -124,7 +124,7 @@ namespace Templatizer.Models
   public class GitHubAccessTokenResult
   {
     public string token { get; set; }
-    public string expires_at { get; set; }
+    public DateTime expires_at { get; set; }
     public string repository_selection { get; set; }
     public Dictionary<string, string> permissions { get; set; }
   }

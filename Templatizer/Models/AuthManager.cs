@@ -9,11 +9,8 @@ using System.Security.Cryptography;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using Templatizer.Models;
-using System.IO;
-using System.Net.Http.Json;
 
 namespace Templatizer.Core
 {
@@ -24,6 +21,10 @@ namespace Templatizer.Core
 
     private ILogger _logger;
     private IConfiguration _config;
+    private string _jwt;
+    private DateTime _jwtExpirationDate;
+    private string _accessToken;
+    private DateTime _accessTokenExpirationDate;
 
     public AuthManager(ILogger logger, IConfiguration configuration)
     {
@@ -39,6 +40,15 @@ namespace Templatizer.Core
     /// <returns>A JWT token to be included as an authorization header.</returns>
     private async Task<string> GetJWT()
     {
+      // Check for a cached JWT that hasn't expired
+      if (
+        !String.IsNullOrEmpty(this._jwt) &&
+        this._jwtExpirationDate != null &&
+        DateTime.UtcNow < this._jwtExpirationDate
+      )
+      {
+        return this._jwt;
+      }
       var privateKey = await GetSecret(AuthManager.GITHUB_KEY_NAME);
 
       // The header and footer of the PEM need to be stripped before base64 decoding
@@ -50,14 +60,18 @@ namespace Templatizer.Core
       var securityKey = new RsaSecurityKey(rsa);
       var myIssuer = _config["GitHubAppId"];
       var tokenHandler = new JwtSecurityTokenHandler();
+      var expiryDate = DateTime.UtcNow.AddMinutes(9);
       var tokenDescriptor = new SecurityTokenDescriptor
       {
-        Expires = DateTime.UtcNow.AddMinutes(9),
+        Expires = expiryDate,
         Issuer = myIssuer,
         SigningCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256)
       };
       var token = tokenHandler.CreateToken(tokenDescriptor);
-      return tokenHandler.WriteToken(token);
+      var jwt = tokenHandler.WriteToken(token);
+      this._jwt = jwt;
+      this._jwtExpirationDate = expiryDate;
+      return jwt;
     }
 
     /// <summary>
@@ -66,10 +80,22 @@ namespace Templatizer.Core
     /// </summary>
     /// <param name="installationId"></param>
     /// <returns></returns>
-    private async Task<string> GetAccessToken(int installationId)
+    public async Task<string> GetAccessToken(int installationId)
     {
-      // TODO: future me, these expire in one hour after the request
+      // TODO: Currently we are getting an access token that does not specify
+      // a specific set of repositories we're allowed to access, and instead
+      // will provide access to all repositories the app has access to.  In 
+      // the future, we should grab scoped tokens and cache them on a repo by
+      // repo basis. 
       // https://api.github.com/app/installations/:installation_id/access_tokens
+      if (
+        !String.IsNullOrEmpty(this._accessToken) &&
+        this._accessTokenExpirationDate != null &&
+        DateTime.UtcNow < this._accessTokenExpirationDate
+      )
+      {
+        return this._accessToken;
+      }
       var jwt = await GetJWT();
       var endpoint = $"https://api.github.com/app/installations/{installationId}/access_tokens";
       var requestMessage = new HttpRequestMessage
@@ -77,10 +103,10 @@ namespace Templatizer.Core
         RequestUri = new Uri(endpoint),
         Method = HttpMethod.Post,
         Headers = {
-          { "Authorization", $"Bearer {jwt}" },
-          { "Accept", "application/vnd.github.machine-man-preview+json" },
-          { "User-Agent", "Templatizer" }
-        }
+                    { "Authorization", $"Bearer {jwt}" },
+                    { "Accept", "application/vnd.github.machine-man-preview+json" },
+                    { "User-Agent", "Templatizer" }
+                }
       };
       var client = new HttpClient();
       var response = await client.SendAsync(requestMessage);
@@ -92,7 +118,9 @@ namespace Templatizer.Core
       }
       var responseStream = await response.Content.ReadAsStreamAsync();
       var result = await JsonSerializer.DeserializeAsync<GitHubAccessTokenResult>(responseStream);
-      return result.token;
+      this._accessToken = result.token;
+      this._accessTokenExpirationDate = result.expires_at;
+      return this._accessToken;
     }
 
     /// <summary>
