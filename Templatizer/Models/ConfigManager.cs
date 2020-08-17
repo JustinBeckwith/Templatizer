@@ -7,6 +7,7 @@ using System.Net.Http;
 using Templatizer.Models;
 using System.Net.Http.Json;
 using Google.Cloud.Firestore;
+using System.Collections.Generic;
 
 namespace Templatizer.Core
 {
@@ -106,11 +107,14 @@ namespace Templatizer.Core
       var db = GetFirestoreDb();
       var doc = db.Collection("configs").Document(repoId.ToString());
       var snapshot = await doc.GetSnapshotAsync();
-      if (snapshot.Exists) {
+      if (snapshot.Exists)
+      {
         Console.WriteLine("Document data for {0} document:", snapshot.Id);
         var config = snapshot.ConvertTo<FullAppConfig>();
         return config;
-      } else {
+      }
+      else
+      {
         Console.WriteLine("Document {0} does not exist!", snapshot.Id);
         return null;
       }
@@ -122,11 +126,30 @@ namespace Templatizer.Core
     /// <returns></returns>
     private FirestoreDb GetFirestoreDb()
     {
-      if (_firestoreDb == null) {
+      if (_firestoreDb == null)
+      {
         var projectId = _config["ProjectId"];
         _firestoreDb = FirestoreDb.Create(projectId);
       }
       return _firestoreDb;
+    }
+
+    /// <summary>
+    /// /// Fetch a list of configs that match a given repository
+    /// </summary>
+    /// <param name="repo">Repository name in the org/name format</param>
+    /// <returns>A list of configs</returns>
+    public async Task<List<FullAppConfig>> GetMatchingConfigs(string repo)
+    {
+      var db = GetFirestoreDb();
+      var configs = new List<FullAppConfig>();
+      var query = db.Collection("configs").WhereEqualTo("repo", repo);
+      var snapshot = await query.GetSnapshotAsync();
+      foreach (var queryResult in snapshot.Documents)
+      {
+        configs.Add(queryResult.ConvertTo<FullAppConfig>());
+      }
+      return configs;
     }
   }
 }

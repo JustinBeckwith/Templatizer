@@ -38,7 +38,7 @@ namespace Templatizer.Core
     /// applications.
     /// </summary>
     /// <returns>A JWT token to be included as an authorization header.</returns>
-    private async Task<string> GetJWT()
+    public async Task<string> GetJWT()
     {
       // Check for a cached JWT that hasn't expired
       if (
@@ -84,9 +84,9 @@ namespace Templatizer.Core
     {
       // TODO: Currently we are getting an access token that does not specify
       // a specific set of repositories we're allowed to access, and instead
-      // will provide access to all repositories the app has access to.  In 
+      // will provide access to all repositories the app has access to.  In
       // the future, we should grab scoped tokens and cache them on a repo by
-      // repo basis. 
+      // repo basis.
       // https://api.github.com/app/installations/:installation_id/access_tokens
       if (
         !String.IsNullOrEmpty(this._accessToken) &&

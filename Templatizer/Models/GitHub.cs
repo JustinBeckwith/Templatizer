@@ -59,6 +59,7 @@ namespace Templatizer.Models
     public string compare_url { get; set; }
     public string contents_url { get; set; }
     public string contributors_url { get; set; }
+    public string default_branch { get; set; }
     public string deployments_url { get; set; }
     public string downloads_url { get; set; }
     public string events_url { get; set; }
