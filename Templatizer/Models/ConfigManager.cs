@@ -137,13 +137,14 @@ namespace Templatizer.Core
     /// <summary>
     /// /// Fetch a list of configs that match a given repository
     /// </summary>
-    /// <param name="repo">Repository name in the org/name format</param>
+    /// <param name="sourceSetPath">Repository name in the org/name format</param>
     /// <returns>A list of configs</returns>
-    public async Task<List<FullAppConfig>> GetMatchingConfigs(string repo)
+    public async Task<List<FullAppConfig>> GetMatchingConfigs(string sourceSetPath)
     {
       var db = GetFirestoreDb();
       var configs = new List<FullAppConfig>();
-      var query = db.Collection("configs").WhereEqualTo("repo", repo);
+      var query = db.Collection("configs")
+        .WhereArrayContains("configSets", sourceSetPath);
       var snapshot = await query.GetSnapshotAsync();
       foreach (var queryResult in snapshot.Documents)
       {

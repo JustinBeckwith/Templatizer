@@ -8,8 +8,7 @@ using System.Text.Json;
 using Templatizer.Models;
 using System.IO;
 using Templatizer.Core;
-using System.Net.Http;
-using System.Net.Http.Json;
+using Microsoft.Extensions.FileSystemGlobbing;
 using System.Collections.Generic;
 
 namespace Templatizer.Controllers
@@ -81,7 +80,7 @@ namespace Templatizer.Controllers
       Console.WriteLine($"Got a push to {payload.repository.full_name} from {payload.sender.login}");
 
       // Only look at commits that landed on the default branch
-      if (payload.ref_ != payload.repository.default_branch)
+      if (payload.ref_ != $"refs/heads/{payload.repository.default_branch}")
       {
         return;
       }
@@ -106,15 +105,56 @@ namespace Templatizer.Controllers
 
       // If there are sourceSets defined, this is a source of template files that
       // make changes in other repositories.
-      if (config.sourceSets == null) {
+      if (config.sourceSets == null)
+      {
         return;
       }
-      var repoName = payload.repository.full_name;
-      var matchingConfigs = await _configManager.GetMatchingConfigs(repoName);
 
-      // Iterate over each commit in the push. For each commit, iterate over
-      // The list of matching configs, and generate a pull request with the
-      // same contents.
+      // A push happened to a sourceSet repo! Do this:
+      // - Find the list of modified files
+      // - Find the list of sourceSets that have been changed based on the glob
+      // - Find all consumer repos that link to the set of sourceSets changed
+      // - Clone the producer repo
+      // - Iterate over each repo affected and...
+      //   - Clone the consumer repo
+      //   - Do a copy only of globbed patterns in the source set
+      //   - submit a PR
+      //
+
+      // Build a collection of all files modified due to the push event
+
+      foreach (var commit in payload.commits)
+      {
+        var filesModified = new List<string>();
+        filesModified.AddRange(commit.modified);
+        filesModified.AddRange(commit.removed);
+        filesModified.AddRange(commit.added);
+
+        // Find all the sourceSets that have been affected
+        var affectedSourceSets = new List<TemplateSet>();
+        foreach (var sourceSet in config.sourceSets)
+        {
+          var m = new Matcher();
+          foreach (var glob in sourceSet.files)
+          {
+            m.AddInclude(glob);
+          }
+          var result = m.Match(filesModified);
+          if (result.HasMatches)
+          {
+            affectedSourceSets.Add(sourceSet);
+          }
+        }
+
+        // Find a list of repositories that use the given sourceSets
+        var affectedRepos = new List<string>();
+        foreach (var sourceSet in affectedSourceSets)
+        {
+          var sourceSetPath = $"{payload.repository.full_name}/{sourceSet.name}";
+          var matchingConfigs = await _configManager.GetMatchingConfigs(sourceSetPath);
+          Console.WriteLine(matchingConfigs.ToString());
+        }
+      }
     }
   }
 }
